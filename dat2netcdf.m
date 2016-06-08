@@ -62,9 +62,17 @@ function dat2netcdf(dirName,var2Read)
             if isequal(dirData(f).isdir,1)
                 newPath = char(path.concat(dirData(f).name));
                 if length(dirName) > 2
-                    dat2netcdf({newPath,char(savePath.concat(dirData(f).name)),char(logPath)});
+                    if nargin > 1
+                        dat2netcdf({newPath,char(savePath.concat(dirData(f).name)),char(logPath)},var2Read);
+                    else
+                        dat2netcdf({newPath,char(savePath.concat(dirData(f).name)),char(logPath)});
+                    end
                 else
-                    dat2netcdf({newPath,char(savePath.concat(dirData(f).name))});
+                    if nargin > 1
+                        dat2netcdf({newPath,char(savePath.concat(dirData(f).name))},var2Read);
+                    else
+                        dat2netcdf({newPath,char(savePath.concat(dirData(f).name))});
+                    end
                 end
             end
         end
@@ -86,7 +94,6 @@ function writeFile(fileT,var2Read,savePath,logPath)
         tmp = char(tmp(end).split('.dat'));
         newName = strcat(tmp,'.nc');
         newFile = char(savePath.concat(newName));
-%         GLOBALNC = netcdf.getConstant('NC_GLOBAL');
 
         % Creating new nc file
         if exist(newFile,'file')
@@ -97,11 +104,9 @@ function writeFile(fileT,var2Read,savePath,logPath)
         % Adding file dimensions
         latdimID = netcdf.defDim(ncid,'lat',length(latDataSet));
         londimID = netcdf.defDim(ncid,'lon',length(lonDataSet));
-        %timedimID = netcdf.defDim(ncid,'time',netcdf.getConstant('NC_UNLIMITED'));
 
         % Adding file variables
-        varID = netcdf.defVar(ncid,var2Read,'float',[londimID,latdimID]);%,timedimID]);
-        %[~] = netcdf.defVar(ncid,'time','float',timedimID);
+        varID = netcdf.defVar(ncid,var2Read,'float',[londimID,latdimID]);
         latvarID = netcdf.defVar(ncid,'lat','float',latdimID);
         lonvarID = netcdf.defVar(ncid,'lon','float',londimID);
         netcdf.endDef(ncid);
