@@ -109,7 +109,7 @@ function writeFile(fileT,var2Read,savePath,logPath)
         % Writing the data into file
         netcdf.putVar(ncid,latvarID,latDataSet);
         netcdf.putVar(ncid,lonvarID,lonDataSet);
-        netcdf.putVar(ncid,varID,sdata);
+        netcdf.putVar(ncid,varID,sdata');
         
         % Local params
         netcdf.putAtt(ncid,latvarID,'standard_name','latitude');
