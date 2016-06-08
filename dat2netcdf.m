@@ -1,6 +1,6 @@
 function dat2netcdf(dirName,var2Read)
    if nargin < 1
-        error('dataProcessingIR4: dirName is a required input')
+        error('dat2netcdf: dirName is a required input')
     else
         dirName = strrep(dirName,'\','/'); % Clean dirName var
     end
@@ -16,18 +16,18 @@ function dat2netcdf(dirName,var2Read)
         path = path.concat('/');
     end
     if(length(dirName)>1)
-        save_path = java.lang.String(dirName(2));
+        savePath = java.lang.String(dirName(2));
         if(length(dirName)>2)
             logPath = java.lang.String(dirName(3));
         else
             logPath = java.lang.String(dirName(2));
         end
 	else
-		save_path = java.lang.String(dirName(1));
+		savePath = java.lang.String(dirName(1));
 		logPath = java.lang.String(dirName(1));
     end
-    if(save_path.charAt(save_path.length-1) ~= '/')
-        save_path = save_path.concat('/');
+    if(savePath.charAt(savePath.length-1) ~= '/')
+        savePath = savePath.concat('/');
     end
     if(logPath.charAt(logPath.length-1) ~= '/')
         logPath = logPath.concat('/');
@@ -55,36 +55,38 @@ function dat2netcdf(dirName,var2Read)
                         delete(strcat(char(logPath),'log.txt'));
                     end
                 end
-                writeFile(fileT,var2Read,yearC,savePath,logPath);
+                writeFile(fileT,var2Read,savePath,logPath);
             end
             
         else
             if isequal(dirData(f).isdir,1)
                 newPath = char(path.concat(dirData(f).name));
                 if length(dirName) > 2
-                    dat2nefcdf({newPath,char(save_path.concat(dirData(f).name)),char(logPath)});
+                    dat2netcdf({newPath,char(savePath.concat(dirData(f).name)),char(logPath)});
                 else
-                    dat2nefcdf({newPath,char(save_path.concat(dirData(f).name))});
+                    dat2netcdf({newPath,char(savePath.concat(dirData(f).name))});
                 end
             end
         end
     end
 end
 
-function writeFile(fileT,var2Read,yearC,savePath,logPath)
+function writeFile(fileT,var2Read,savePath,logPath)
     % New file configuration
     if ~exist(char(savePath),'dir')
         mkdir(char(savePath));
     end
-
+    ncid = NaN;
+    newFile = NaN;
     try
         latDataSet = [-89.8750:0.25:90];
         lonDataSet = [0.1250:0.25:360];
+        sdata = dlmread(char(fileT));
         tmp = fileT.split('/');
         tmp = char(tmp(end).split('.dat'));
         newName = strcat(tmp,'.nc');
         newFile = char(savePath.concat(newName));
-        GLOBALNC = netcdf.getConstant('NC_GLOBAL');
+%         GLOBALNC = netcdf.getConstant('NC_GLOBAL');
 
         % Creating new nc file
         if exist(newFile,'file')
@@ -95,47 +97,52 @@ function writeFile(fileT,var2Read,yearC,savePath,logPath)
         % Adding file dimensions
         latdimID = netcdf.defDim(ncid,'lat',length(latDataSet));
         londimID = netcdf.defDim(ncid,'lon',length(lonDataSet));
-        timedimID = netcdf.defDim(ncid,'time',netcdf.getConstant('NC_UNLIMITED'));
-
-        % Global params
-%         netcdf.copyAtt(ncoid,GLOBALNC,'parent_experiment',ncid,GLOBALNC);
-%         netcdf.copyAtt(ncoid,GLOBALNC,'parent_experiment_id',ncid,GLOBALNC);
-%         netcdf.copyAtt(ncoid,GLOBALNC,'parent_experiment_rip',ncid,GLOBALNC);
-%         netcdf.copyAtt(ncoid,GLOBALNC,'institution',ncid,GLOBALNC);
-%         netcdf.copyAtt(ncoid,GLOBALNC,'realm',ncid,GLOBALNC);
-%         netcdf.copyAtt(ncoid,GLOBALNC,'modeling_realm',ncid,GLOBALNC);
-%         netcdf.copyAtt(ncoid,GLOBALNC,'version',ncid,GLOBALNC);
-%         netcdf.copyAtt(ncoid,GLOBALNC,'downscalingModel',ncid,GLOBALNC);
-%         netcdf.copyAtt(ncoid,GLOBALNC,'experiment_id',ncid,GLOBALNC);
-%         netcdf.copyAtt(ncoid,GLOBALNC,'parent_experiment',ncid,GLOBALNC);
-%         netcdf.copyAtt(ncoid,GLOBALNC,'parent_experiment',ncid,GLOBALNC);
-%         netcdf.copyAtt(ncoid,GLOBALNC,'parent_experiment',ncid,GLOBALNC);
-%         netcdf.copyAtt(ncoid,GLOBALNC,'parent_experiment',ncid,GLOBALNC);
-%         netcdf.copyAtt(ncoid,GLOBALNC,'parent_experiment',ncid,GLOBALNC);
-%         netcdf.copyAtt(ncoid,GLOBALNC,'parent_experiment',ncid,GLOBALNC);
-        netcdf.putAtt(ncid,GLOBALNC,'frequency','monthly');
-        netcdf.putAtt(ncid,GLOBALNC,'year',num2str(yearC));
-        netcdf.putAtt(ncid,GLOBALNC,'data_analysis_institution','CIGEFI - Universidad de Costa Rica');
-        netcdf.putAtt(ncid,GLOBALNC,'data_analysis_institution',char(datetime('today')));
-        netcdf.putAtt(ncid,GLOBALNC,'data_analysis_contact','Roberto Villegas D: roberto.villegas@ucr.ac.cr');
+        %timedimID = netcdf.defDim(ncid,'time',netcdf.getConstant('NC_UNLIMITED'));
 
         % Adding file variables
-        varID = netcdf.defVar(ncid,var2Read,'float',[timedimID,latdimID,londimID]);
-        [~] = netcdf.defVar(ncid,'time','float',timedimID);
+        varID = netcdf.defVar(ncid,var2Read,'float',[londimID,latdimID]);%,timedimID]);
+        %[~] = netcdf.defVar(ncid,'time','float',timedimID);
         latvarID = netcdf.defVar(ncid,'lat','float',latdimID);
         lonvarID = netcdf.defVar(ncid,'lon','float',londimID);
-
         netcdf.endDef(ncid);
+        
         % Writing the data into file
         netcdf.putVar(ncid,latvarID,latDataSet);
         netcdf.putVar(ncid,lonvarID,lonDataSet);
-        netcdf.close(ncoid);
+        netcdf.putVar(ncid,varID,sdata);
+        
+        % Local params
+        netcdf.putAtt(ncid,latvarID,'standard_name','latitude');
+        netcdf.putAtt(ncid,latvarID,'long_name','Latitude');
+        netcdf.putAtt(ncid,latvarID,'units','degrees_north');
+        netcdf.putAtt(ncid,latvarID,'actual_range','-89.875f, 89.875f');
+        netcdf.putAtt(ncid,latvarID,'axis','Y');
+        netcdf.putAtt(ncid,lonvarID,'standard_name','longitude');
+        netcdf.putAtt(ncid,lonvarID,'long_name','Longitude');
+        netcdf.putAtt(ncid,lonvarID,'units','degrees_east');
+        netcdf.putAtt(ncid,lonvarID,'actual_range','0.125f, 359.875f');
+        netcdf.putAtt(ncid,lonvarID,'axis','X');
+        netcdf.putAtt(ncid,varID,'standard_name','precipitation');
+        netcdf.putAtt(ncid,varID,'long_name','Precipitation');
+        if strcmp(var2Read,'pr')
+            netcdf.putAtt(ncid,varID,'units','mm/day');
+        else
+            netcdf.putAtt(ncid,varID,'units','°C/day');
+        end
+        netcdf.close(ncid);
+        fid = fopen(strcat(char(logPath),'log.txt'), 'at');
+    	fprintf(fid, '[SAVED][%s] %s\n',char(datetime('now')),char(strcat(tmp,'.dat')));
+    	fclose(fid);
+    	disp(char(strcat({'Data saved:  '},{' '},char(strcat(tmp,'.dat')))));
     catch exception
         disp(exception.message);
-        netcdf.close(ncid);
-        netcdf.close(ncoid);
-        if exist(newFile,'file')
-            delete(newFile);
+        if ~isnan(ncid)
+            netcdf.close(ncid);
+        end
+        if ~isnan(newFile)
+            if exist(newFile,'file')
+                delete(newFile);
+            end
         end
         fid = fopen(strcat(char(logPath),'log.txt'), 'at');
         fprintf(fid, '[ERROR][%s] %s\n %s\n\n',char(datetime('now')),char(fileT),char(exception.message));
