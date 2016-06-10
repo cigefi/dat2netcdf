@@ -136,7 +136,8 @@ function writeFile(fileT,var2Read,savePath,logPath)
         end
         netcdf.close(ncid);
         fid = fopen(strcat(char(logPath),'log.txt'), 'at');
-    	fprintf(fid, '[SAVED][%s] %s\n',char(datetime('now')),char(strcat(tmp,'.dat')));
+    	%fprintf(fid, '[SAVED][%s] %s\n',char(datetime('now')),char(strcat(tmp,'.dat')));
+        fprintf(fid, '[SAVED][%s] %s\n',char(strcat(tmp,'.dat')));
     	fclose(fid);
     	disp(char(strcat({'Data saved:  '},{' '},char(strcat(tmp,'.dat')))));
     catch exception
@@ -150,7 +151,8 @@ function writeFile(fileT,var2Read,savePath,logPath)
             end
         end
         fid = fopen(strcat(char(logPath),'log.txt'), 'at');
-        fprintf(fid, '[ERROR][%s] %s\n %s\n\n',char(datetime('now')),char(fileT),char(exception.message));
+        %fprintf(fid, '[ERROR][%s] %s\n %s\n\n',char(datetime('now')),char(fileT),char(exception.message));
+        fprintf(fid, '[ERROR][%s] %s\n %s\n\n',char(fileT),char(exception.message));
         fclose(fid);
         return;
     end
